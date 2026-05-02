@@ -51,6 +51,18 @@ npx eas-cli build --platform android --profile preview
 npx eas-cli build --platform ios --profile preview
 ```
 
+## GitHub Action for PR previews
+
+This repo also includes `.github/workflows/preview.yml`.
+
+To make it work, add a repository secret named `EXPO_TOKEN`:
+
+1. Create a token at `https://expo.dev/settings/access-tokens`
+2. Add it in GitHub under `Settings -> Secrets and variables -> Actions`
+3. Name the secret `EXPO_TOKEN`
+
+After that, every pull request will publish an EAS Update preview and comment the result on the PR.
+
 ## Next implementation step
 
 Connect Supabase auth and replace the local preview auth state.

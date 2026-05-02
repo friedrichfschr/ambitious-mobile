@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "friedrich.fschr",
     "name": "Ambitious Mobile",
     "slug": "ambitious-mobile",
     "version": "1.0.0",
@@ -15,7 +16,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.friedrichfschr.ambitiousmobile"
+      "bundleIdentifier": "com.friedrichfschr.ambitiousmobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -40,6 +44,15 @@
     "description": "Scholarships, opportunities, community, and messaging in one mobile app.",
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f23c88f4-b653-489f-bb69-78587ef4f0fa"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f23c88f4-b653-489f-bb69-78587ef4f0fa"
     }
   }
 }

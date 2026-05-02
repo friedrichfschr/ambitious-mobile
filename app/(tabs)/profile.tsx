@@ -1,10 +1,10 @@
 import { View } from 'react-native';
 import { Button, Card, List, Text } from 'react-native-paper';
 
-import { AppScreen } from '@/src/components/AppScreen';
-import { AuthGate } from '@/src/components/AuthGate';
-import { useAuth } from '@/src/contexts/auth-context';
-import { usePreferences } from '@/src/contexts/preferences-context';
+import { AppScreen } from '../../src/components/AppScreen';
+import { AuthGate } from '../../src/components/AuthGate';
+import { useAuth } from '../../src/contexts/auth-context';
+import { usePreferences } from '../../src/contexts/preferences-context';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -25,27 +25,27 @@ export default function ProfileScreen() {
     <AppScreen>
       <Card mode="contained">
         <Card.Content>
-          <Text variant="headlineSmall">{user.name}</Text>
+          <Text variant="headlineSmall">{user.displayName || 'Ambitious user'}</Text>
           <Text variant="bodyLarge" style={{ marginTop: 4, opacity: 0.75 }}>
-            {user.email}
+            {user.email || 'No public email'}
           </Text>
           <View style={{ flexDirection: 'row', gap: 24, marginTop: 20 }}>
             <View>
-              <Text variant="headlineSmall">12</Text>
+              <Text variant="headlineSmall">{user.providers.length}</Text>
               <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-                Saved
+                Providers
               </Text>
             </View>
             <View>
-              <Text variant="headlineSmall">4</Text>
+              <Text variant="headlineSmall">{user.profile?.location ? '1' : '0'}</Text>
               <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-                Posts
+                Location set
               </Text>
             </View>
             <View>
-              <Text variant="headlineSmall">3</Text>
+              <Text variant="headlineSmall">{user.profile?.bio ? '1' : '0'}</Text>
               <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-                Chats
+                Bio set
               </Text>
             </View>
           </View>
@@ -54,16 +54,17 @@ export default function ProfileScreen() {
 
       <Card mode="contained" style={{ marginTop: 20 }}>
         <Card.Content>
-          <Text variant="titleMedium">Current starter decisions</Text>
-          <List.Item title="Component system" description="React Native Paper (Material 3, customized to stay minimal)" left={(props) => <List.Icon {...props} icon="layers-outline" />} />
-          <List.Item title="Accent palette" description={accent} left={(props) => <List.Icon {...props} icon="palette-outline" />} />
+          <Text variant="titleMedium">Backend-linked profile state</Text>
+          <List.Item title="Providers" description={user.providers.join(', ') || 'None'} left={(props) => <List.Icon {...props} icon="shield-account-outline" />} />
+          <List.Item title="Headline" description={user.profile?.headline || 'Not set yet'} left={(props) => <List.Icon {...props} icon="card-account-details-outline" />} />
+          <List.Item title="Location" description={user.profile?.location || 'Not set yet'} left={(props) => <List.Icon {...props} icon="map-marker-outline" />} />
+          <List.Item title="Accent palette" description={user.profile?.accentColor || accent} left={(props) => <List.Icon {...props} icon="palette-outline" />} />
           <List.Item title="Appearance mode" description={colorModeLabel} left={(props) => <List.Icon {...props} icon="theme-light-dark" />} />
-          <List.Item title="Auth direction" description="Supabase + email, Google, and Apple next" left={(props) => <List.Icon {...props} icon="shield-account-outline" />} />
         </Card.Content>
       </Card>
 
       <Button mode="outlined" style={{ marginTop: 20 }}>
-        Future: edit profile
+        Future: edit profile form
       </Button>
     </AppScreen>
   );

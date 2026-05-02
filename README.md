@@ -63,6 +63,21 @@ To make it work, add a repository secret named `EXPO_TOKEN`:
 
 After that, every pull request will publish an EAS Update preview and comment the result on the PR.
 
+## Backend integration
+
+This app is now structured to talk to a standalone Node/Express API instead of the earlier local preview-only auth state.
+
+See:
+- `docs/backend-integration.md`
+- `.env.example`
+
+Required mobile env vars:
+- `EXPO_PUBLIC_API_URL`
+- `EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID`
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
+- `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+
 ## Next implementation step
 
-Connect Supabase auth and replace the local preview auth state.
+Point the app at the deployed `ambitious-server`, fill the Expo env vars, and then add a real editable profile screen on top of the new authenticated API layer.

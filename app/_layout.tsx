@@ -4,8 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AuthProvider } from '@/src/contexts/auth-context';
-import { PreferencesProvider, usePreferences } from '@/src/contexts/preferences-context';
+import { AuthProvider, useAuth } from '../src/contexts/auth-context';
+import { PreferencesProvider, usePreferences } from '../src/contexts/preferences-context';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -15,19 +15,22 @@ export const unstable_settings = {
 
 function AppNavigator() {
   const { isDarkMode, navigationTheme, paperTheme } = usePreferences();
+  const { isHydrating } = useAuth();
+
+  if (isHydrating) {
+    return null;
+  }
 
   return (
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
         <NavigationThemeProvider value={navigationTheme}>
-          <AuthProvider>
-            <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="auth" options={{ presentation: 'modal', title: 'Sign in' }} />
-              <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-            </Stack>
-          </AuthProvider>
+          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="auth" options={{ presentation: 'modal', title: 'Sign in' }} />
+            <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+          </Stack>
         </NavigationThemeProvider>
       </PaperProvider>
     </SafeAreaProvider>
@@ -37,7 +40,9 @@ function AppNavigator() {
 export default function RootLayout() {
   return (
     <PreferencesProvider>
-      <AppNavigator />
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
     </PreferencesProvider>
   );
 }

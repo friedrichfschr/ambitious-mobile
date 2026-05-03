@@ -22,12 +22,17 @@ type AuthContextValue = {
   isSigningIn: boolean;
   signInWithEmail: (input: { email: string; password: string }) => Promise<void>;
   // Register step 1: sends OTP, returns the email back. Does NOT sign in.
-  startEmailRegistration: (input: { email: string; password: string; displayName: string }) => Promise<{ email: string }>;
+  startEmailRegistration: (input: { email: string; password: string; username: string }) => Promise<{ email: string }>;
   // Register step 2: verifies OTP and signs in.
   confirmEmailRegistration: (input: { email: string; code: string }) => Promise<void>;
   signInWithGoogle: (idToken: string) => Promise<void>;
   signInWithApple: (input: { identityToken: string; firstName?: string; lastName?: string }) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  /** Re-fetches the current user from the server and updates the stored session. */
+  refreshUser: () => Promise<void>;
+  /** Patches the in-memory session user without a round-trip (e.g. after avatar upload). */
+  patchUser: (partial: Partial<AuthUser>) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -59,7 +64,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     (async () => {
       try {
-        // Check first launch before anything else
         const launched = await AsyncStorage.getItem(LAUNCHED_KEY);
         if (!launched) {
           await AsyncStorage.setItem(LAUNCHED_KEY, '1');
@@ -77,16 +81,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
           await persistSession({ ...stored, user: me.user });
         } catch (error) {
           if (error instanceof ApiClientError && error.statusCode === 401) {
-            const refreshed = await authApi.refresh(stored.refreshToken);
-            await applyAuthResult(refreshed);
-          } else {
-            throw error;
+            try {
+              const refreshed = await authApi.refresh(stored.refreshToken);
+              await applyAuthResult(refreshed);
+            } catch (refreshError) {
+              if (refreshError instanceof ApiClientError && refreshError.statusCode === 401) {
+                console.warn('Refresh token rejected — clearing session');
+                await AsyncStorage.removeItem(STORAGE_KEY);
+                setSession(null);
+              }
+            }
           }
         }
       } catch (error) {
         console.warn('Failed to hydrate auth session', error);
-        await AsyncStorage.removeItem(STORAGE_KEY);
-        setSession(null);
       } finally {
         setIsHydrating(false);
       }
@@ -96,7 +104,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const sessionRef = useRef(session);
   useEffect(() => { sessionRef.current = session; }, [session]);
 
-  // Register a token store so apiRequest can silently refresh on 401
   useEffect(() => {
     registerTokenStore({
       getRefreshToken: () => sessionRef.current?.refreshToken ?? null,
@@ -132,6 +139,32 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [persistSession]);
 
+  const deleteAccount = useCallback(async () => {
+    const token = sessionRef.current?.accessToken;
+    if (token) await authApi.deleteAccount(token);
+    await persistSession(null);
+  }, [persistSession]);
+
+  const refreshUser = useCallback(async () => {
+    const cur = sessionRef.current;
+    if (!cur) return;
+    try {
+      const me = await authApi.me(cur.accessToken);
+      await persistSession({ ...cur, user: me.user });
+    } catch {
+      // Non-fatal — keep the existing session as-is
+    }
+  }, [persistSession]);
+
+  const patchUser = useCallback((partial: Partial<AuthUser>) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, user: { ...prev.user, ...partial } };
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user: session?.user ?? null,
@@ -139,16 +172,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isHydrating,
       isFirstLaunch,
       isSigningIn,
-      // wrapSignIn and signOut are stable (useCallback) — included directly
       signInWithEmail: (input) => wrapSignIn(() => authApi.login(input)),
       startEmailRegistration: (input) => authApi.register(input),
       confirmEmailRegistration: (input) => wrapSignIn(() => authApi.confirmRegistration(input)),
       signInWithGoogle: (idToken) => wrapSignIn(() => authApi.loginWithGoogle(idToken)),
       signInWithApple: (input) => wrapSignIn(() => authApi.loginWithApple(input)),
       signOut,
+      deleteAccount,
+      refreshUser,
+      patchUser,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isHydrating, isFirstLaunch, isSigningIn, session, wrapSignIn, signOut],
+    [isHydrating, isFirstLaunch, isSigningIn, session, wrapSignIn, signOut, deleteAccount, refreshUser, patchUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -4,10 +4,11 @@ import type { AuthResponse, AuthUser } from '../types/auth';
 export const authApi = {
   // Step 1: validates input, stores pending registration, sends 4-digit code email.
   // Returns { email } with 202 — user is NOT created yet.
-  register(input: { email: string; password: string; displayName: string }) {
+  register(input: { email: string; password: string; username: string }) {
     return apiRequest<{ email: string }>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify(input),
+      // Backend requires displayName; use username as the default — user can edit later.
+      body: JSON.stringify({ ...input, displayName: input.username }),
     });
   },
 
@@ -61,9 +62,32 @@ export const authApi = {
     });
   },
 
+  deleteAccount(accessToken: string) {
+    return apiRequest<void>('/api/auth/account', {
+      method: 'DELETE',
+      token: accessToken,
+    });
+  },
+
   getMyProfile(accessToken: string) {
     return apiRequest<{ profile: import('../types/auth').UserProfile }>('/api/profiles/me', {
       method: 'GET',
+      token: accessToken,
+    });
+  },
+
+  updateUsername(username: string, accessToken: string) {
+    return apiRequest<{ username: string }>('/api/users/me/username', {
+      method: 'PATCH',
+      body: JSON.stringify({ username }),
+      token: accessToken,
+    });
+  },
+
+  uploadAvatar(formData: FormData, accessToken: string) {
+    return apiRequest<{ avatarUrl: string }>('/api/profiles/me/avatar', {
+      method: 'POST',
+      body: formData,
       token: accessToken,
     });
   },

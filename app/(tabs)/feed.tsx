@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Card, Chip, Text } from 'react-native-paper';
 
 import { AppScreen } from '@/src/components/AppScreen';
@@ -22,23 +22,23 @@ export default function FeedScreen() {
 
   return (
     <AppScreen>
-      <View style={{ gap: 16 }}>
+      <View style={styles.list}>
         {feedPreviewPosts.map((post) => (
           <Card key={post.id} mode="contained">
             <Card.Content>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={styles.postHeader}>
                 <Text variant="labelLarge">{post.community}</Text>
-                <Text variant="bodySmall" style={{ opacity: 0.65 }}>
+                <Text variant="bodySmall" style={styles.timestamp}>
                   {post.timestamp}
                 </Text>
               </View>
-              <Text variant="titleMedium" style={{ marginTop: 12 }}>
+              <Text variant="titleMedium" style={styles.postTitle}>
                 {post.title}
               </Text>
-              <Text variant="bodyMedium" style={{ marginTop: 8 }}>
+              <Text variant="bodyMedium" style={styles.postPreview}>
                 {post.preview}
               </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+              <View style={styles.tagRow}>
                 {post.tags.map((tag) => (
                   <Chip key={tag} compact>
                     {tag}
@@ -52,3 +52,12 @@ export default function FeedScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  list:        { gap: 16 },
+  postHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  timestamp:   { opacity: 0.65 },
+  postTitle:   { marginTop: 12 },
+  postPreview: { marginTop: 8 },
+  tagRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+});

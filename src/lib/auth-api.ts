@@ -1,9 +1,19 @@
 import { apiRequest } from './api';
-import type { AuthResponse, AuthUser, UserProfile } from '../types/auth';
+import type { AuthResponse, AuthUser } from '../types/auth';
 
 export const authApi = {
+  // Step 1: validates input, stores pending registration, sends 4-digit code email.
+  // Returns { email } with 202 — user is NOT created yet.
   register(input: { email: string; password: string; displayName: string }) {
-    return apiRequest<AuthResponse>('/api/auth/register', {
+    return apiRequest<{ email: string }>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  // Step 2: verify the 4-digit code. Creates the real user and returns a session.
+  confirmRegistration(input: { email: string; code: string }) {
+    return apiRequest<AuthResponse>('/api/auth/confirm-registration', {
       method: 'POST',
       body: JSON.stringify(input),
     });
@@ -52,7 +62,7 @@ export const authApi = {
   },
 
   getMyProfile(accessToken: string) {
-    return apiRequest<{ profile: UserProfile }>('/api/profiles/me', {
+    return apiRequest<{ profile: import('../types/auth').UserProfile }>('/api/profiles/me', {
       method: 'GET',
       token: accessToken,
     });

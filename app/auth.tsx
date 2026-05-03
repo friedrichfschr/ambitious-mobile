@@ -1,167 +1,170 @@
-import * as Google from 'expo-auth-session/providers/google';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useMemo, useState } from 'react';
-import { Platform, View } from 'react-native';
-import { Button, Card, Divider, HelperText, SegmentedButtons, Text, TextInput } from 'react-native-paper';
+import { useEffect, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 
-import { AppScreen } from '../src/components/AppScreen';
-import { appEnv } from '../src/config/env';
+import { Button, Divider, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { useAuth } from '../src/contexts/auth-context';
+import { usePreferences } from '../src/contexts/preferences-context';
+import { useAppleAuth } from '../src/hooks/useAppleAuth';
+import { useGoogleAuth } from '../src/hooks/useGoogleAuth';
+import { resolveRedirect } from '../src/lib/navigation';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const redirectMap = {
-  '/(tabs)/feed': '/(tabs)/feed',
-  '/(tabs)/messages': '/(tabs)/messages',
-  '/(tabs)/profile': '/(tabs)/profile',
-} as const;
+export default function AuthWelcomeScreen() {
+  const { redirectTo, firstLaunch } = useLocalSearchParams<{ redirectTo?: string | string[]; firstLaunch?: string }>();
+  const { signInWithGoogle, signInWithApple, isSigningIn } = useAuth();
+  const { paperTheme } = usePreferences();
+  const insets = useSafeAreaInsets();
 
-export default function AuthScreen() {
-  const { redirectTo } = useLocalSearchParams<{ redirectTo?: string | string[] }>();
-  const { signInWithApple, signInWithEmail, signInWithGoogle, signUpWithEmail, isSigningIn } = useAuth();
-
+  const isFirstLaunch = firstLaunch === '1';
   const rawTarget = Array.isArray(redirectTo) ? redirectTo[0] : redirectTo;
-  const target = rawTarget && rawTarget in redirectMap ? redirectMap[rawTarget as keyof typeof redirectMap] : '/(tabs)/profile';
+  const target = resolveRedirect(redirectTo);
+  const params = rawTarget ? { redirectTo: rawTarget } : {};
 
-  const [mode, setMode] = useState<'login' | 'register'>('register');
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [appleAvailable, setAppleAvailable] = useState(false);
 
-  const [googleRequest, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
-    clientId: appEnv.googleExpoClientId || undefined,
-    iosClientId: appEnv.googleIosClientId || undefined,
-    androidClientId: appEnv.googleAndroidClientId || undefined,
-    webClientId: appEnv.googleWebClientId || undefined,
-  });
-
-  useEffect(() => {
-    if (Platform.OS !== 'ios') return;
-
-    (async () => {
-      const AppleAuthentication = await import('expo-apple-authentication');
-      const available = await AppleAuthentication.isAvailableAsync();
-      setAppleAvailable(available);
-    })().catch(() => setAppleAvailable(false));
-  }, []);
+  const [googleRequest, googleResponse, promptGoogle] = useGoogleAuth();
+  const { appleAvailable, getAppleCredential } = useAppleAuth();
 
   useEffect(() => {
     if (googleResponse?.type !== 'success') return;
-
     const idToken = (googleResponse.params as { id_token?: string } | undefined)?.id_token;
-    if (!idToken) {
-      setError('Google sign-in did not return an ID token. Check the OAuth client configuration.');
-      return;
-    }
-
+    if (!idToken) { setError('Google sign-in did not return an ID token.'); return; }
     (async () => {
       try {
         setError(null);
         await signInWithGoogle(idToken);
+        router.dismissAll();
         router.replace(target);
-      } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : 'Google sign-in failed');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Google sign-in failed');
       }
     })();
-  }, [googleResponse, signInWithGoogle, target]);
-
-  const submitDisabled = useMemo(() => {
-    if (!email || !password) return true;
-    if (mode === 'register' && !displayName.trim()) return true;
-    return false;
-  }, [displayName, email, mode, password]);
-
-  async function handleEmailSubmit() {
-    try {
-      setError(null);
-      if (mode === 'login') {
-        await signInWithEmail({ email, password });
-      } else {
-        await signUpWithEmail({ email, password, displayName: displayName.trim() });
-      }
-      router.replace(target);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Authentication failed');
-    }
-  }
+  }, [googleResponse]);
 
   async function handleAppleSignIn() {
     try {
       setError(null);
-      const AppleAuthentication = await import('expo-apple-authentication');
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-
-      if (!credential.identityToken) {
-        throw new Error('Apple did not return an identity token.');
-      }
-
-      await signInWithApple({
-        identityToken: credential.identityToken,
-        firstName: credential.fullName?.givenName ?? undefined,
-        lastName: credential.fullName?.familyName ?? undefined,
-      });
+      const credential = await getAppleCredential();
+      await signInWithApple(credential);
+      router.dismissAll();
       router.replace(target);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Apple sign-in failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Apple sign-in failed');
     }
   }
 
   return (
-    <AppScreen contentContainerStyle={{ flex: 1, justifyContent: 'center' }}>
-      <Card mode="contained">
-        <Card.Content>
-          <Text variant="headlineSmall">Account access</Text>
-          <Text variant="bodyMedium" style={{ marginTop: 10 }}>
-            The app now expects a real backend session. Email/password is the fastest path. Google and Apple depend on the manual OAuth configuration listed in the repo docs.
-          </Text>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: paperTheme.colors.background,
+          paddingTop: insets.top + 24,
+          paddingBottom: insets.bottom + 24,
+        },
+      ]}>
+      {!isFirstLaunch ? (
+        <View style={styles.top}>
+          <Button
+            icon="arrow-left"
+            mode="text"
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            labelStyle={{ color: paperTheme.colors.onSurfaceVariant }}>
+            Back
+          </Button>
+        </View>
+      ) : <View style={styles.top} />}
 
-          <SegmentedButtons
-            value={mode}
-            onValueChange={(value) => setMode(value as 'login' | 'register')}
-            style={{ marginTop: 20 }}
-            buttons={[
-              { value: 'register', label: 'Create account' },
-              { value: 'login', label: 'Log in' },
-            ]}
-          />
+      <View style={styles.hero}>
+        <Text variant="displaySmall" style={{ color: paperTheme.colors.primary, fontWeight: '700' }}>
+          Ambitious
+        </Text>
+        <Text variant="titleMedium" style={{ color: paperTheme.colors.onSurfaceVariant, marginTop: 8 }}>
+          Scholarships, fellowships & opportunities — all in one place.
+        </Text>
+      </View>
 
-          <View style={{ gap: 12, marginTop: 20 }}>
-            {mode === 'register' ? (
-              <TextInput label="Display name" value={displayName} onChangeText={setDisplayName} autoCapitalize="words" />
+      <View style={styles.actions}>
+        <Button
+          mode="contained"
+          contentStyle={styles.btnContent}
+          onPress={() => router.push({ pathname: '/register', params })}>
+          Create account
+        </Button>
+        <Button
+          mode="outlined"
+          contentStyle={styles.btnContent}
+          style={{ marginTop: 12 }}
+          onPress={() => router.push({ pathname: '/login', params })}>
+          Log in
+        </Button>
+
+        {(googleRequest || (Platform.OS === 'ios' && appleAvailable)) ? (
+          <>
+            <View style={styles.dividerRow}>
+              <View style={[styles.line, { backgroundColor: paperTheme.colors.outlineVariant }]} />
+              <Text variant="bodySmall" style={{ color: paperTheme.colors.onSurfaceVariant, marginHorizontal: 12 }}>or</Text>
+              <View style={[styles.line, { backgroundColor: paperTheme.colors.outlineVariant }]} />
+            </View>
+
+            {googleRequest ? (
+              <Button
+                mode="outlined"
+                icon="google"
+                contentStyle={styles.btnContent}
+                disabled={isSigningIn}
+                onPress={() => promptGoogle()}>
+                Continue with Google
+              </Button>
             ) : null}
-            <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-            <TextInput label="Password" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" />
-            <Button mode="contained" onPress={handleEmailSubmit} disabled={submitDisabled || isSigningIn} loading={isSigningIn}>
-              {mode === 'login' ? 'Log in with email' : 'Create account with email'}
-            </Button>
-          </View>
 
-          <Divider style={{ marginVertical: 20 }} />
-
-          <View style={{ gap: 12 }}>
-            <Button mode="outlined" onPress={() => promptGoogle()} disabled={!googleRequest || isSigningIn}>
-              Continue with Google
-            </Button>
             {Platform.OS === 'ios' && appleAvailable ? (
-              <Button mode="outlined" onPress={handleAppleSignIn} disabled={isSigningIn}>
+              <Button
+                mode="outlined"
+                icon="apple"
+                contentStyle={styles.btnContent}
+                style={{ marginTop: 12 }}
+                disabled={isSigningIn}
+                onPress={handleAppleSignIn}>
                 Continue with Apple
               </Button>
             ) : null}
-          </View>
+          </>
+        ) : null}
 
-          <HelperText type={error ? 'error' : 'info'} visible>
-            {error ?? 'Manual setup still needed: API URL, Google OAuth client IDs, and Apple Sign In capability.'}
-          </HelperText>
-        </Card.Content>
-      </Card>
-    </AppScreen>
+        {error ? (
+          <Text variant="bodySmall" style={{ color: paperTheme.colors.error, textAlign: 'center', marginTop: 12 }}>
+            {error}
+          </Text>
+        ) : null}
+
+        {isFirstLaunch ? (
+          <Button
+            mode="text"
+            onPress={() => router.replace('/(tabs)/profile')}
+            style={{ marginTop: 16 }}
+            labelStyle={{ color: paperTheme.colors.onSurfaceVariant, fontSize: 13 }}>
+            Continue as guest
+          </Button>
+        ) : null}
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, paddingHorizontal: 24 },
+  top: { alignItems: 'flex-start' },
+  backBtn: { marginLeft: -8 },
+  hero: { flex: 1, justifyContent: 'center' },
+  actions: { paddingBottom: 8 },
+  btnContent: { height: 52 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+  line: { flex: 1, height: 1 },
+});

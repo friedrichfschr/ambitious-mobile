@@ -14,6 +14,7 @@ export type AuthUser = {
   email: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  emailVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
   profile: UserProfile | null;

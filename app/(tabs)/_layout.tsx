@@ -20,11 +20,13 @@ export default function TabLayout() {
         tabBarActiveTintColor: paperTheme.colors.primary,
         tabBarInactiveTintColor: paperTheme.colors.onSurfaceVariant,
         tabBarStyle: {
-          backgroundColor: paperTheme.colors.elevation.level2,
+          backgroundColor: paperTheme.colors.surface,
           borderTopColor: paperTheme.colors.outlineVariant,
-          height: 68,
+          borderTopWidth: 1,
+          height: 64,
           paddingBottom: 8,
-          paddingTop: 8,
+          paddingTop: 6,
+          elevation: 0,
         },
         headerStyle: {
           backgroundColor: paperTheme.colors.background,
@@ -32,6 +34,8 @@ export default function TabLayout() {
         headerShadowVisible: false,
         headerTitleStyle: {
           fontWeight: '700',
+          fontSize: 17,
+          color: paperTheme.colors.onSurface,
         },
         sceneStyle: {
           backgroundColor: paperTheme.colors.background,
@@ -40,9 +44,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Opportunities',
+          title: 'Explore',
           tabBarIcon: ({ color }) => <TabIcon name="compass-outline" color={color} />,
-          headerTitle: 'Scholarships & opportunities',
+          headerTitle: 'Opportunities',
         }}
       />
       <Tabs.Screen
@@ -50,7 +54,7 @@ export default function TabLayout() {
         options={{
           title: 'Feed',
           tabBarIcon: ({ color }) => <TabIcon name="forum-outline" color={color} />,
-          headerTitle: 'Community feed',
+          headerTitle: 'Community',
         }}
       />
       <Tabs.Screen

@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Avatar, Card, Text } from 'react-native-paper';
 
 import { AppScreen } from '@/src/components/AppScreen';
@@ -22,19 +22,19 @@ export default function MessagesScreen() {
 
   return (
     <AppScreen>
-      <View style={{ gap: 12 }}>
+      <View style={styles.list}>
         {messagePreviewThreads.map((thread) => (
           <Card key={thread.id} mode="contained">
-            <Card.Content style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+            <Card.Content style={styles.threadContent}>
               <Avatar.Text size={48} label={thread.name.slice(0, 2).toUpperCase()} />
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={styles.threadBody}>
+                <View style={styles.threadHeader}>
                   <Text variant="titleMedium">{thread.name}</Text>
-                  <Text variant="bodySmall" style={{ opacity: 0.65 }}>
+                  <Text variant="bodySmall" style={styles.threadTime}>
                     {thread.time}
                   </Text>
                 </View>
-                <Text variant="bodyMedium" style={{ marginTop: 4, opacity: 0.82 }}>
+                <Text variant="bodyMedium" style={styles.threadPreview}>
                   {thread.preview}
                 </Text>
               </View>
@@ -45,3 +45,12 @@ export default function MessagesScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  list:          { gap: 12 },
+  threadContent: { flexDirection: 'row', gap: 14, alignItems: 'center' },
+  threadBody:    { flex: 1 },
+  threadHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  threadTime:    { opacity: 0.65 },
+  threadPreview: { marginTop: 4, opacity: 0.82 },
+});

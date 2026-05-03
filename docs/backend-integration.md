@@ -23,5 +23,6 @@ Implemented client flows:
 ## Notes
 
 - Apple sign-in only renders on iOS when available.
+- For Expo Go Apple testing, the backend must accept `host.exp.Exponent` as an Apple audience in addition to your real app bundle identifier.
 - Google sign-in requires the matching OAuth client IDs from Google Cloud.
 - The backend verifies Google and Apple identity tokens before creating or linking a user.

@@ -21,6 +21,9 @@ jobs:
             exit 1
           fi
 
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
       - name: Verify Expo owner
         run: |
           OWNER=$(node -p "require('./app.json').expo.owner")
@@ -28,9 +31,6 @@ jobs:
             echo "app.json owner '$OWNER' does not match expected owner '$EXPO_PROJECT_OWNER'."
             exit 1
           fi
-
-      - name: Checkout repository
-        uses: actions/checkout@v5
 
       - name: Setup Node
         uses: actions/setup-node@v6

@@ -10,10 +10,10 @@ export function useGoogleAuth() {
     androidClientId: appEnv.googleAndroidClientId || undefined,
     webClientId: appEnv.googleWebClientId || undefined,
   };
-  const safeConfig =
+  const missingId =
     (Platform.OS === 'ios' && !config.iosClientId) ||
-    (Platform.OS === 'android' && !config.androidClientId)
-      ? {}
-      : config;
-  return Google.useIdTokenAuthRequest(safeConfig);
+    (Platform.OS === 'android' && !config.androidClientId);
+  // Pass null to disable the request rather than passing an incomplete config,
+  // which would throw "iosClientId must be defined" at runtime.
+  return Google.useIdTokenAuthRequest(missingId ? null : config);
 }

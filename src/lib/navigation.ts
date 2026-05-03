@@ -1,6 +1,6 @@
 export const REDIRECT_MAP = {
   '/(tabs)/feed': '/(tabs)/feed',
-  '/(tabs)/messages': '/(tabs)/messages',
+  '/(tabs)/network': '/(tabs)/network',
   '/(tabs)/profile': '/(tabs)/profile',
 } as const;
 

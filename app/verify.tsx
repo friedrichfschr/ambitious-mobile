@@ -1,111 +1,132 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, TextInput as RNTextInput, View } from 'react-native';
-import { Button, HelperText, Text } from 'react-native-paper';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import {
+  Pressable,
+  StyleSheet,
+  TextInput as RNTextInput,
+  View,
+} from "react-native";
+import { Button, HelperText, Text } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAuth } from '../src/contexts/auth-context';
-import { usePreferences } from '../src/contexts/preferences-context';
-import { resolveRedirect } from '../src/lib/navigation';
+import { useAuth } from "../src/contexts/auth-context";
+import { usePreferences } from "../src/contexts/preferences-context";
+import { resolveRedirect } from "../src/lib/navigation";
 
 export default function VerifyScreen() {
-  const { email, redirectTo } = useLocalSearchParams<{ email: string; redirectTo?: string }>();
+  const { email, redirectTo } = useLocalSearchParams<{
+    email: string;
+    redirectTo?: string;
+  }>();
   const { confirmEmailRegistration, isSigningIn } = useAuth();
   const { paperTheme } = usePreferences();
   const insets = useSafeAreaInsets();
 
   const target = resolveRedirect(redirectTo);
 
-  const [digits, setDigits] = useState(['', '', '', '']);
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const inputRefs = useRef<(RNTextInput | null)[]>([null, null, null, null]);
+  const inputRef = useRef<RNTextInput>(null);
 
-  const code = digits.join('');
+  const digits = code.padEnd(4, " ").split("").slice(0, 4);
   const isComplete = code.length === 4;
 
   useEffect(() => {
-    // Auto-submit when all 4 digits are entered
     if (isComplete && !isSigningIn) handleVerify();
   }, [code]);
 
-  function handleDigitChange(index: number, value: string) {
-    const digit = value.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[index] = digit;
-    setDigits(next);
+  function handleChange(value: string) {
+    const clean = value.replace(/\D/g, "").slice(0, 4);
     setError(null);
-    if (digit && index < 3) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  }
-
-  function handleKeyPress(index: number, key: string) {
-    if (key === 'Backspace' && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-      const next = [...digits];
-      next[index - 1] = '';
-      setDigits(next);
-    }
+    setCode(clean);
   }
 
   async function handleVerify() {
     if (!isComplete || isSigningIn) return;
     try {
       setError(null);
-      await confirmEmailRegistration({ email: email ?? '', code });
+      await confirmEmailRegistration({ email: email ?? "", code });
       router.dismissAll();
       router.replace(target);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
-      setDigits(['', '', '', '']);
-      inputRefs.current[0]?.focus();
+      setError(err instanceof Error ? err.message : "Verification failed");
+      setCode("");
+      inputRef.current?.focus();
     }
   }
+
+  const c = paperTheme.colors;
 
   return (
     <View
       style={[
         styles.container,
-        { backgroundColor: paperTheme.colors.background, paddingBottom: insets.bottom + 24 },
-      ]}>
+        { backgroundColor: c.background, paddingBottom: insets.bottom + 24 },
+      ]}
+    >
       <View style={styles.body}>
-        <Text variant="headlineMedium" style={{ fontWeight: '700', color: paperTheme.colors.onSurface }}>
+        <Text
+          variant="headlineMedium"
+          style={{ fontWeight: "700", color: c.onSurface }}
+        >
           Check your email
         </Text>
-        <Text variant="bodyMedium" style={{ color: paperTheme.colors.onSurfaceVariant, marginTop: 8 }}>
-          We sent a 4-digit code to{'\n'}
-          <Text variant="bodyMedium" style={{ color: paperTheme.colors.onSurface, fontWeight: '600' }}>
+        <Text
+          variant="bodyMedium"
+          style={{ color: c.onSurfaceVariant, marginTop: 8 }}
+        >
+          We sent a 4-digit code to{"\n"}
+          <Text
+            variant="bodyMedium"
+            style={{ color: c.onSurface, fontWeight: "600" }}
+          >
             {email}
           </Text>
         </Text>
 
-        <View style={styles.digitRow}>
-          {digits.map((digit, i) => (
-            <RNTextInput
-              key={i}
-              ref={(ref) => { inputRefs.current[i] = ref; }}
-              value={digit}
-              onChangeText={(v) => handleDigitChange(i, v)}
-              onKeyPress={({ nativeEvent }) => handleKeyPress(i, nativeEvent.key)}
-              keyboardType="number-pad"
-              maxLength={1}
-              selectTextOnFocus
-              style={[
-                styles.digitInput,
-                {
-                  borderColor: digit
-                    ? paperTheme.colors.primary
-                    : paperTheme.colors.outlineVariant,
-                  backgroundColor: paperTheme.colors.surface,
-                  color: paperTheme.colors.onSurface,
-                },
-              ]}
-            />
-          ))}
-        </View>
+        {/* Tap the visual boxes to focus the hidden input */}
+        <Pressable
+          onPress={() => inputRef.current?.focus()}
+          style={styles.digitRow}
+        >
+          {digits.map((digit, i) => {
+            const filled = digit.trim().length > 0;
+            const active = i === code.length;
+            return (
+              <View
+                key={i}
+                style={[
+                  styles.digitBox,
+                  {
+                    borderColor:
+                      filled || active ? c.primary : c.outlineVariant,
+                    backgroundColor: c.surface,
+                  },
+                ]}
+              >
+                <Text style={[styles.digitText, { color: c.onSurface }]}>
+                  {filled ? digit : ""}
+                </Text>
+              </View>
+            );
+          })}
+        </Pressable>
+
+        {/* Hidden input that owns the actual text entry */}
+        <RNTextInput
+          ref={inputRef}
+          value={code}
+          onChangeText={handleChange}
+          keyboardType="number-pad"
+          maxLength={4}
+          textContentType="oneTimeCode"
+          autoFocus
+          caretHidden
+          style={styles.hiddenInput}
+        />
 
         {error ? (
-          <HelperText type="error" visible style={{ textAlign: 'center' }}>
+          <HelperText type="error" visible style={{ textAlign: "center" }}>
             {error}
           </HelperText>
         ) : null}
@@ -116,7 +137,8 @@ export default function VerifyScreen() {
           disabled={!isComplete || isSigningIn}
           loading={isSigningIn}
           contentStyle={styles.btnContent}
-          style={{ marginTop: 8 }}>
+          style={{ marginTop: 8 }}
+        >
           Verify
         </Button>
 
@@ -124,7 +146,8 @@ export default function VerifyScreen() {
           mode="text"
           onPress={() => router.back()}
           style={{ marginTop: 8 }}
-          labelStyle={{ color: paperTheme.colors.onSurfaceVariant }}>
+          labelStyle={{ color: c.onSurfaceVariant }}
+        >
           Change email address
         </Button>
       </View>
@@ -133,17 +156,24 @@ export default function VerifyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24 },
-  body: { flex: 1, justifyContent: 'center', gap: 0 },
-  digitRow: { flexDirection: 'row', gap: 12, marginTop: 40, marginBottom: 8, justifyContent: 'center' },
-  digitInput: {
+  container: { flex: 1, paddingHorizontal: 24, paddingTop: 70 },
+  body: { flex: 1 },
+  digitRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 40,
+    marginBottom: 8,
+    justifyContent: "center",
+  },
+  digitBox: {
     width: 64,
     height: 72,
     borderWidth: 2,
     borderRadius: 16,
-    textAlign: 'center',
-    fontSize: 28,
-    fontWeight: '700',
+    alignItems: "center",
+    justifyContent: "center",
   },
+  digitText: { fontSize: 28, fontWeight: "700" },
+  hiddenInput: { position: "absolute", width: 0, height: 0, opacity: 0 },
   btnContent: { height: 52 },
 });

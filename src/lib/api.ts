@@ -20,7 +20,8 @@ export async function apiRequest<T>(
   const apiUrl = requireApiUrl();
   const headers = new Headers(init.headers);
 
-  if (!headers.has('content-type') && init.body) {
+  // Don't set content-type for FormData — fetch sets it automatically with the correct multipart boundary.
+  if (!headers.has('content-type') && init.body && !(init.body instanceof FormData)) {
     headers.set('content-type', 'application/json');
   }
 
@@ -48,7 +49,18 @@ export async function apiRequest<T>(
 
   const text = await response.text();
   console.log(`[API] response body:`, text);
-  const data = text ? JSON.parse(text) : null;
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // Non-JSON response (e.g. HTML error page from a proxy/gateway).
+      // Treat as a generic error — the status code will drive error handling below.
+      if (response.ok) {
+        throw new ApiClientError(`Unexpected non-JSON response from ${url}`, response.status);
+      }
+    }
+  }
 
   if (!response.ok) {
     // Attempt a token refresh on 401, once per request (guard with _retry flag)
@@ -68,10 +80,11 @@ export async function apiRequest<T>(
       }
     }
 
+    const errData = data as Record<string, unknown> | null;
     throw new ApiClientError(
-      data?.message || `Request failed with status ${response.status}`,
+      (errData?.error as string) || (errData?.message as string) || `Request failed with status ${response.status}`,
       response.status,
-      data?.details,
+      errData?.details,
     );
   }
 

@@ -11,6 +11,7 @@ export type UserProfile = {
 
 export type AuthUser = {
   id: string;
+  username: string;
   email: string | null;
   displayName: string | null;
   avatarUrl: string | null;

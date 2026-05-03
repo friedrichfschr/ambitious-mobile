@@ -308,7 +308,43 @@ export const feedPreviewPosts = [
 ];
 
 export const messagePreviewThreads = [
-  { id: 'thread-1', name: 'Lina M.', preview: 'I found two STEM scholarship databases that might fit your shortlist.', time: '09:12' },
-  { id: 'thread-2', name: 'Mentor Group', preview: "Let's compare application timelines before the weekend.", time: 'Yesterday' },
-  { id: 'thread-3', name: 'Alex R.', preview: 'Your draft opening paragraph is already much stronger.', time: 'Thu' },
+  { id: 'thread-1', name: 'Lina M.',      preview: 'I found two STEM scholarship databases that might fit your shortlist.', time: '09:12' },
+  { id: 'thread-2', name: 'Mentor Group', preview: "Let's compare application timelines before the weekend.",              time: 'Yesterday' },
+  { id: 'thread-3', name: 'Alex R.',      preview: 'Your draft opening paragraph is already much stronger.',               time: 'Thu' },
 ];
+
+export type ChatMessage = {
+  id: string;
+  text: string;
+  fromMe: boolean;
+  timestamp: string;
+};
+
+export const mockConversations: Record<string, ChatMessage[]> = {
+  'thread-1': [
+    { id: '1', text: 'Hey! Did you end up applying for the Fulbright?', fromMe: false, timestamp: '08:54' },
+    { id: '2', text: 'Not yet, still working on the personal statement. The word limit is brutal.', fromMe: true, timestamp: '08:57' },
+    { id: '3', text: 'Ha, same. I rewrote mine four times. What angle are you going with?', fromMe: false, timestamp: '08:58' },
+    { id: '4', text: 'Focusing on my research in renewable energy policy. Trying to tie it to the host country context.', fromMe: true, timestamp: '09:01' },
+    { id: '5', text: 'That sounds strong. Very specific and relevant.', fromMe: false, timestamp: '09:03' },
+    { id: '6', text: 'Thanks! Also do you know any good scholarship databases? I feel like I\'m missing stuff outside the big names.', fromMe: true, timestamp: '09:09' },
+    { id: '7', text: 'I found two STEM scholarship databases that might fit your shortlist.', fromMe: false, timestamp: '09:12' },
+  ],
+  'thread-2': [
+    { id: '1', text: 'Hey everyone, should we set up a shared deadline tracker?', fromMe: false, timestamp: 'Mon 10:00' },
+    { id: '2', text: 'Great idea. I\'ll set up a Notion doc.', fromMe: true, timestamp: 'Mon 10:04' },
+    { id: '3', text: 'Perfect. Also, who has already submitted something this cycle?', fromMe: false, timestamp: 'Mon 10:05' },
+    { id: '4', text: 'I sent in the Gates Cambridge last week.', fromMe: false, timestamp: 'Mon 10:06' },
+    { id: '5', text: 'Nice! I\'m still polishing the Rhodes. Deadline is in 3 weeks.', fromMe: true, timestamp: 'Mon 10:10' },
+    { id: '6', text: "Let's compare application timelines before the weekend.", fromMe: false, timestamp: 'Yesterday 16:30' },
+  ],
+  'thread-3': [
+    { id: '1', text: 'Could you take a look at my personal statement draft?', fromMe: true, timestamp: 'Wed 14:00' },
+    { id: '2', text: 'Of course, send it over.', fromMe: false, timestamp: 'Wed 14:02' },
+    { id: '3', text: 'Sent! It\'s the Schwarzman application. I\'m worried the opening is too generic.', fromMe: true, timestamp: 'Wed 14:05' },
+    { id: '4', text: 'Reading it now... okay, the first two sentences are a bit broad but the rest picks up really well.', fromMe: false, timestamp: 'Wed 15:30' },
+    { id: '5', text: 'Try opening with the specific moment you decided to pursue this path instead of the general statement.', fromMe: false, timestamp: 'Wed 15:32' },
+    { id: '6', text: 'That\'s a great point. Let me try a new version.', fromMe: true, timestamp: 'Wed 15:45' },
+    { id: '7', text: 'Your draft opening paragraph is already much stronger.', fromMe: false, timestamp: 'Thu 09:20' },
+  ],
+};

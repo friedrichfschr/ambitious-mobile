@@ -4,7 +4,13 @@
       "Bash(xargs grep:*)",
       "Bash(ls -la /c/Users/localadmin/Programming/ambitious-mobile/.env*)",
       "Read(//c/Users/localadmin/Programming/ambitious-mobile/**)",
-      "Bash(npx expo:*)"
+      "Bash(npx expo:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(copy \"C:\\\\Users\\\\localadmin\\\\Programming\\\\ambitious-mobile\\\\.claude\\\\worktrees\\\\trusting-mclean\\\\app\\\\\\(tabs\\)\\\\post.tsx\" \"C:\\\\Users\\\\localadmin\\\\Programming\\\\ambitious-mobile\\\\.claude\\\\worktrees\\\\trusting-mclean\\\\app\\\\\\(tabs\\)\\\\add.tsx\")",
+      "Bash(del \"C:\\\\Users\\\\localadmin\\\\Programming\\\\ambitious-mobile\\\\.claude\\\\worktrees\\\\trusting-mclean\\\\app\\\\\\(tabs\\)\\\\post.tsx\")"
     ]
   }
 }

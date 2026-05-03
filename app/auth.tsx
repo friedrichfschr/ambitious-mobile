@@ -51,8 +51,9 @@ export default function AuthWelcomeScreen() {
       setError(null);
       const credential = await getAppleCredential();
       await signInWithApple(credential);
+      // Always visit choose-username after Apple so users can set/confirm their handle.
       router.dismissAll();
-      router.replace(target);
+      router.replace({ pathname: '/choose-username', params: rawTarget ? { redirectTo: rawTarget } : {} });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Apple sign-in failed');
     }

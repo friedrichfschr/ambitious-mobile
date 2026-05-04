@@ -8,6 +8,8 @@ function normalizeGoogleClientId(value: string) {
   return trimmed.endsWith('.apps.googleusercontent.com') ? trimmed : undefined;
 }
 
+const disabledPrompt = async () => ({ type: 'dismiss' as const });
+
 export function useGoogleAuth() {
   const config = {
     clientId: normalizeGoogleClientId(appEnv.googleExpoClientId),
@@ -15,10 +17,30 @@ export function useGoogleAuth() {
     androidClientId: normalizeGoogleClientId(appEnv.googleAndroidClientId),
     webClientId: normalizeGoogleClientId(appEnv.googleWebClientId),
   };
-  const missingId =
-    (Platform.OS === 'ios' && !config.iosClientId) ||
-    (Platform.OS === 'android' && !config.androidClientId);
-  // Pass null to disable the request rather than passing an incomplete config,
-  // which would throw "iosClientId must be defined" at runtime.
-  return Google.useIdTokenAuthRequest(missingId ? null : config);
+
+  const platformClientId = Platform.select({
+    ios: config.iosClientId,
+    android: config.androidClientId,
+    default: config.webClientId,
+  });
+
+  const googleEnabled = Boolean(platformClientId);
+  const fallbackClientId =
+    platformClientId ??
+    config.clientId ??
+    config.webClientId ??
+    'disabled.apps.googleusercontent.com';
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: fallbackClientId,
+    iosClientId: config.iosClientId ?? fallbackClientId,
+    androidClientId: config.androidClientId ?? fallbackClientId,
+    webClientId: config.webClientId ?? fallbackClientId,
+  });
+
+  if (!googleEnabled) {
+    return [null, null, disabledPrompt] as const;
+  }
+
+  return [request, response, promptAsync] as const;
 }
